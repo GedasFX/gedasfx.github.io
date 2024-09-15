@@ -2,18 +2,18 @@
 layout: post
 title: Exposing my local server on the internet using Tailscale, https, and a custom domain
 date: 2024-09-15
-categories: infrastructure tailscale docker traefik vps https tls
+categories: infrastructure tailscale docker traefik https
 ---
 
 I should start with a disclaimer, please for the love of god, do not use this setup for production use. This article is for educational purposes only!
 
-## The Problem
+# The Problem
 
-My AWS free trial is expiring that hosts the one non-static or serverless website I have. Now a sane person would either: (1) drop the project, (2) start paying $7.2/mo. to Amazon, or (3) switch hosts. I didn't want to drop the project, and it was definitely not worth the monthly fee, so I decided to switch to something I already had: my private server I have at home.
+My AWS free trial is expiring, and I have some non-static or serverless website hosted there with virtually no traffic. Now a sane person would either: (1) drop the projects, (2) start paying $7.2 per month to Amazon, or (3) switch hosts. I didn't want to drop the projects, and it was definitely not worth to pay the monthly fee, so I decided to switch to something I already had: my server I have at home.
 
-I would start the migration till I quickly find out that I do not have an external IP address. I also seem to have no means of getting one either.
+I started the migration and I quickly found out that I do not have an external IP address. Looking into it, I also seem to have no means of getting one either.
 
-Thinking outside the box for a sec I decided to go with a cheap local VPS for $2 a month to act as an external IP address. Idea is that if I can make a VPN tunnel, I can set up a reverse-proxy on the device and forward the requests within the VPN.
+Thinking outside the box for a sec I decided to rent with a cheap VM from a local provider for ~$2 a month to act as a proxy with an external IP address. Idea is that if I can make a VPN tunnel, I can set up a reverse-proxy on the device and forward the requests within the VPN.
 
 Simple, I install tailscale and then run...
 
@@ -28,23 +28,23 @@ $ sudo modprobe tun
 # modprobe: FATAL: Module tun not found in directory /lib/modules/6.1.0
 ```
 
-Well that throws a wrench in my plans. Time for plan B.
+Well that is unexpected. Looks like the provider does not allow access to manage network. Not a big deal, time for plan B.
 
-## Plan B
+# Plan B
 
-While [Plan O](#plan-o---just-expose-the-port-dummy) (allow users to access your machine directly) and [Plan A](#plan-a---just-use-a-vpn) (use a VPN) are clearly better, more secure, and require significantly less effort, they also require technical infrastructure that I simply cannot obtain or unwilling to pay for.
+Before we begin, I would like to mention the "correct" solutions. [Plan O](#plan-o---just-expose-the-port-dummy) (allow users to access your machine directly) and [Plan A](#plan-a---just-use-a-vpn) (use a VPN) are clearly better, more secure, and require significantly less effort, however, they also require technical infrastructure that I simply do not and can not have.
 
-### The Idea
+## The Idea
 
 Here is the general idea I had before I put everything together.
 
-[Tailscale](https://tailscale.com/) offers a service called [Funnel](https://tailscale.com/kb/1223/funnel), which allows users to expose their websites (specifically), to the internet. This comes with 2 issues, as (1) it only allows for HTTPS traffic, and (2) it does not allow you to pick the hostname (cannot use CNAME to redirect either as they take out a certificate for you which would cause TLS issues).
+[Tailscale](https://tailscale.com/) offers a service called [Funnel](https://tailscale.com/kb/1223/funnel), which allows users to expose their websites (specifically), to the internet. This comes with two issues: (1) it only allows for HTTPS traffic, and (2) it does not allow you to pick the hostname (cannot use CNAME to redirect either as they take out a certificate for you which would cause TLS issues).
 
-The first issue is not much a big deal for now, as I want to expose websites, but I would like to expose things like minecraft servers too in the future. For now it is good. The second issue is not really much of an issue either, however, hear me out, custom domain pretty :>.
+The first issue is not much a big deal for now, as I want to expose websites. The second issue, for a sane person, also is a non-issue, ~~but I want my pretty domain~~.
 
 Okay! We now have a potential way to expose our service to the internet, but we need to still set up the proxy. For that I will just use [traefik](https://doc.traefik.io/traefik/). Any other proxy works too, but for this example I will use traefik.
 
-### Putting it together - Tailscale
+## Putting it together - Tailscale
 
 To serve something via Tailscale funnel is quite easy! If you have tailscale installed, you can run:
 
@@ -68,14 +68,14 @@ $ sudo tailscale serve http://localhost:5000
 # |-- proxy http://localhost:5000
 ```
 
-### Putting it together - Tailscale Docker
+## Putting it together - Tailscale Docker
 
 Running serve from host machine is good and all, but we can do better - we can run Tailscale in a docker container together with the service. I personally host everything in Docker anyway, so this works out great.
 
-In general, I was following [a guide by Tailscale](https://tailscale.com/blog/docker-tailscale-guide), and it worked wonders!
+There is [a guide by Tailscale](https://tailscale.com/blog/docker-tailscale-guide) which explains how to configure your infrastructure, and I highly recommend checking it out before continuing.
 
 In short:
-1. In [ACLs](https://login.tailscale.com/admin/acls/file) add `tagOwners` as described in the guide:
+* [1] In [ACLs](https://login.tailscale.com/admin/acls/file) add `tagOwners` as described in the guide:
 
 ``` json
 	"tagOwners": {
@@ -83,7 +83,7 @@ In short:
 	}
 ```
 
-2. Again in ACLs update `nodeAttrs.target` of Funnel policy to include `tag:container`, as seen on [this comment](https://github.com/tailscale/tailscale/issues/11849#issuecomment-2211972964).
+* [2] Again in ACLs update `nodeAttrs.target` of Funnel policy to include `tag:container`, as seen on [this comment](https://github.com/tailscale/tailscale/issues/11849#issuecomment-2211972964).
 
 ```json
 	"nodeAttrs": [
@@ -97,11 +97,11 @@ In short:
 	],
 ```
 
-3. Create `OAuth` client with scope `devices:write`, and tag `tag:container`. Feel free to give a `Description` too.
+* [3] Create `OAuth` client with scope `devices:write`, and tag `tag:container`. Feel free to give a `Description` too.
 
 <img src="../assets/posts/2024-09-15-tailscale-funnel/oauth-client.png" alt="Example of creation window" height="800" />
 
-1. Put together a `docker-compose.yml` file:
+* [4] Put together a `docker-compose.yml` file:
 
 ```yml
 # ./docker-compose.yml
@@ -155,24 +155,24 @@ services:
 
 ```
 
-> Here the docker-compose file is almost 1:1 with the one in the guide, and the `serve.json` is taken from the guide as well.
+> Here the `docker-compose.yml`, and `serve.json` files are almost 1:1 with the one in the guide.
 >
-> The important bits for you to know is the application will work in the network of the tailscale container (can also work vice-versa), meaning even though tailscale doesn't expose port 80, the `app` does, and therefore a request can be proxied to `http://localhost:80`. Do note that the proxy ONLY works to localhost, so this is the only way of doing this.
+> The important bits for you to know is the application will work in the network of the tailscale container (or vice-versa), meaning even though tailscale doesn't expose port 80, the `app` does, and therefore a request can be proxied to `http://localhost:80`. Do note that the proxy ONLY works to localhost, so this is the only way of doing this.
 >
 > If you have more than 1 app you want to expose, you can set up another reverse proxy, or just repeat this pattern for every service you wish to expose.
 
-Running `docker compose up -d` allowed me to access this container from the internet on the url: https://ws2.your-tailnet.ts.net/. the `ws2` bit comes from the container hostname. Unfortunately this means this will not load balance well, but this is for applications with no users anyway so who cares 😆.
+Running `docker compose up -d` allowed me to access this container from the internet on the url: https://ws2.your-tailnet.ts.net/. the `ws2` bit comes from the container hostname. Unfortunately this means that load balancing would require yet another proxy, but this is for applications with no users anyway so who cares 😆.
 
-Finally, wait a few minutes if you do not see your website appear initially. However, if after some time you see that the website still is not available, here are some troubleshooting tips:
+Finally, wait a few minutes for website to start up, get certificates, and properly obtain DNS records. If after some time you see that the website still is not available, here are some troubleshooting tips:
 
 1. Check if the host is up [on the dashboard](https://login.tailscale.com/admin/machines). You should see something like the following:
 ![Image showing host being up](../assets/posts/2024-09-15-tailscale-funnel/host%20is%20up.png)
 
-2. Check if you can access the url from a machine on tailnet. DNS propagates quicker internally so good way to check. If its not working from within a tailnet, something has gone wrong.
+1. Check if you can access the url from a machine on tailnet. DNS propagates quicker within the VPN so good way to check. If its not working from within a tailnet, something has gone wrong.
 
-3. Give more permissions to OAuth token. Personally I had issues with DNS until I gave `dns:write` OAuth token scope, after which all started working, however, it continued working after i returned to original token, so your mileage may vary.
+2. Give more permissions to OAuth token. Personally I had issues with DNS until I gave `dns:write` OAuth token scope, after which all started working, however, it continued working after i returned to original token, so your mileage may vary 🤷.
 
-### Putting it together - Proxy Docker
+## Putting it together - Proxy Docker
 
 Proxying requests should be somewhat straight forward, any proxy works, but I will show you my solution for completeness. This also requests uses Let's Encrypt to create certificates.
 
@@ -190,6 +190,7 @@ services:
       - ./letsencrypt:/letsencrypt
 ```
 
+
 ```yml
 # ./traefik/traefik.yml
 
@@ -198,8 +199,6 @@ entryPoints:
     address: ":80"
   websecure:
     address: ":443"
-
-accessLog: {}
 
 providers:
   file:
@@ -219,6 +218,7 @@ certificatesResolvers:
       httpchallenge:
         entrypoint: web
 ```
+
 
 ```yml
 # ./traefik/providers/my-machine.yml
@@ -244,29 +244,31 @@ http:
 
 With this configuration, that's it! Accessing https://ws2.gedas.dev/ will use `traefik` proxy to make a request to https://ws2.your-tailnet.ts.net/, which will use tailscale to funnel request to the appropriate docker container.
 
-## Alternatives
+In this example, update `certificatesResolvers.main.acme.email` (for https), `http.[hostname].entrypoints.rule` (to the correct hostname), and `http.services.[hostname].loadbalancer.servers[0].url` to match your case. To add more applications to route, just add extra routers and services.
 
-### Plan O - Just expose the port.. dummy
+# Alternatives
+
+## Plan O - Just expose the port.. dummy
 
 When proxying via Cloudflare, its safe-ish to just expose the server you have at home and allow only [CloudFlare IPs](https://www.cloudflare.com/ips/) to access your machine via firewall rules, however I don't really have the option of having an external IP (thanks ISP).
 
-### Plan A - Just use a VPN
+## Plan A - Just use a VPN
 
 What I am doing here is effectively a VPN, but just significantly less private. This was my first idea too, however the VPS provider I use does not permit access to `/dev/net/tun`, so I was out of luck setting up Tailscale.
 
 A different VPS, or a different VPN may have solved this issue, but I didn't try those approaches.
 
-### Plan O-1 Just use the VPS to host the whole server
+## Plan O-1 Just use the VPS to host the whole server
 
 ... fair, I do have no users, my cheap little-to-no resource VPS would have worked regardless.
 
 However, I did want to have MY data on MY server. If I have a project that blows up I will obviously just use this approach as eventually my own internet bandwidth would start to suffer, but for the projects I currently host - this is nothing.
 
-### Plan B-0 Just use the URL provided by the funnel
+## Plan B-0 Just use the URL provided by the funnel
 
 ... also fair, but I wanted my pretty domain :>
 
-## Closing thoughts
+# Closing thoughts
 
 If what you read sounds insane, its because it is. You should not do this. But I had fun doing it, and I feel like I should get back to documenting my findings more often, so here we are.
 
