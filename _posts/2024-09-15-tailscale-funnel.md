@@ -61,7 +61,7 @@ Note: First time setup will prompt you with configuration to enable the features
 This allows us to access the service via https on the tailnet, which is useful, but not that useful as it requires client to be logged in. What I want is to make this publicly accessible which is as simple as running `funnel` instead:
 
 ```bash
-$ sudo tailscale serve http://localhost:5000
+$ sudo tailscale funnel http://localhost:5000
 # Available on the internet:
 # 
 # https://host.your-tailnet.ts.net/
