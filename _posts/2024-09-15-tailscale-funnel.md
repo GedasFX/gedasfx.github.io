@@ -1,17 +1,11 @@
 ---
 layout: post
-title: "How I exposed my local server on the internet using Tailscale"
+title: Exposing my local server on the internet using Tailscale, https, and a custom domain
 date: 2024-09-15
 categories: infrastructure tailscale docker traefik vps https tls
 ---
 
-# How I exposed my local server on the internet using Tailscale with a custom domain and https
-
-## Disclaimer
-
-Please for the love of god, do not use this setup for production use. My programs mostly have no users therefore I could get away with the limitations of latency/bandwidth/just plain reason.
-
-Also my situation is highly specific so far simpler solutions exist to what essentially is a non-issue. Treat this as a proof of concept, rather than something to be taken seriously :D.
+I should start with a disclaimer, please for the love of god, do not use this setup for production use. This article is for educational purposes only!
 
 ## The Problem
 
@@ -105,9 +99,9 @@ In short:
 
 3. Create `OAuth` client with scope `devices:write`, and tag `tag:container`. Feel free to give a `Description` too.
 
-<img src="./2024-09-15-tailscale-funnel.assets/oauth-client.png" alt="Example of creation window" height="800" />
+<img src="../assets/posts/2024-09-15-tailscale-funnel/oauth-client.png" alt="Example of creation window" height="800" />
 
-4. Put together a `docker-compose.yml` file:
+1. Put together a `docker-compose.yml` file:
 
 ```yml
 # ./docker-compose.yml
@@ -172,7 +166,7 @@ Running `docker compose up -d` allowed me to access this container from the inte
 Finally, wait a few minutes if you do not see your website appear initially. However, if after some time you see that the website still is not available, here are some troubleshooting tips:
 
 1. Check if the host is up [on the dashboard](https://login.tailscale.com/admin/machines). You should see something like the following:
-![Image showing host being up](./2024-09-15-tailscale-funnel.assets/host%20is%20up.png)
+![Image showing host being up](../assets/posts/2024-09-15-tailscale-funnel/host%20is%20up.png)
 
 2. Check if you can access the url from a machine on tailnet. DNS propagates quicker internally so good way to check. If its not working from within a tailnet, something has gone wrong.
 
