@@ -3,6 +3,7 @@
         "Proxying",
         "tailnet",
         "tailscale",
-        "traefik"
+        "traefik",
+        "zrok"
     ]
 }

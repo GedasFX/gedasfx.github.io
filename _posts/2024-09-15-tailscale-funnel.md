@@ -2,7 +2,7 @@
 layout: post
 title: Exposing my local server on the internet using Tailscale, https, and a custom domain
 date: 2024-09-15
-categories: infrastructure tailscale docker traefik https
+categories: infrastructure tailscale docker traefik https proxy
 ---
 
 I should start with a disclaimer, please for the love of god, do not use this setup for production use. This article is for educational purposes only!
