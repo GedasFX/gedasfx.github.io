@@ -1,6 +1,6 @@
 ---
 layout: post
-title: SRV Records: how Minecraft finds where to connect
+title: "SRV Records: how Minecraft finds where to connect"
 date: 2024-09-17
 categories: infrastructure minecraft dns playitgg
 ---
