@@ -9,7 +9,7 @@ Well the title should really say exposing arbitrary TCP or UDP ports to the inte
 
 # Motivation
 
-After [exposing my HTTP web servers to the internet](./2024-09-16-exposing-minecraft-with-zrok.md), I decided what else can I proxy via my virtual machine. How about.. my Minecraft server? :o
+After [exposing my HTTP web servers to the internet](https://blog.gedas.dev/exposing-minecraft-with-zrok/), I decided what else can I proxy via my virtual machine. How about.. my Minecraft server? :o
 
 Like before, at the end of this procedure I discovered an easier SaaS approach, which I [talk about at the end](#can-we-do-better). If you want a simple one-program-does-it-all solution, just skip to there. If not.. I hope you find this article educational!
 
@@ -325,4 +325,4 @@ It does have some problems though:
 
 Another service we can make use of is playit.gg. They offer proxy services for arbitrary tcp/udp traffic.
 
-I have a blog post about it here: [link](./2024-09-20-playitgg.md).
+I have a blog post about it here: [link](https://blog.gedas.dev/playitgg/).

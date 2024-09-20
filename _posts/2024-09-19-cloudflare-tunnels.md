@@ -5,7 +5,7 @@ date: 2024-09-19
 categories: infrastructure https dns cloudflare proxy docker
 ---
 
-The [Tailscale funnels I setup earlier](./2024-09-15-tailscale-funnel.md) was a fun experiment, but it had way too many moving parts for my liking. I could [move to zrok](./2024-09-16-exposing-minecraft-with-zrok.md) for my web applications (like I did with Minecraft), but I learnt of another product.
+The [Tailscale funnels I setup earlier](https://blog.gedas.dev/tailscale-funnel/) was a fun experiment, but it had way too many moving parts for my liking. I could [move to zrok](https://blog.gedas.dev/exposing-minecraft-with-zrok/) for my web applications (like I did with Minecraft), but I learnt of another product.
 
 A tip I received from a friend (thanks [Rains](https://github.com/AnnoyingRain5)) was to try out [CloudFlare Tunnels](https://www.cloudflare.com/products/tunnel/)!
 
@@ -15,7 +15,7 @@ I want to self-host a project I have on my from my local computer, however it ca
 
 ## What's so special about Cloudflare Tunnels
 
-[My original setup with tailscale funnels](./2024-09-15-tailscale-funnel.md) worked, but it had very big flaws that were bothering me.
+[My original setup with tailscale funnels](https://blog.gedas.dev/tailscale-funnel/) worked, but it had very big flaws that were bothering me.
 
 For one it was performance. The requests were bouncing all across the world and was taking its sweet time to get to my server. It added latency of ~200ms which was at least noticeable. But the bigger issue I had was just how jank it all was, it had so many fragile moving parts that it could break at any moment. I like my systems working so I opted against it.
 
