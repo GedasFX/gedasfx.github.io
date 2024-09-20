@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Cloudflare Tunnels with Docker are surprisingly simple!"
-date: 2024-09-18
+date: 2024-09-19
 categories: infrastructure https dns cloudflare proxy docker
 ---
 

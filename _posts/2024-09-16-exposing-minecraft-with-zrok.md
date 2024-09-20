@@ -325,4 +325,4 @@ It does have some problems though:
 
 Another service we can make use of is playit.gg. They offer proxy services for arbitrary tcp/udp traffic.
 
-I might have a blog post about this service at a later date, so stay tuned!
+I have a blog post about it here: [link](./2024-09-20-playitgg.md).
