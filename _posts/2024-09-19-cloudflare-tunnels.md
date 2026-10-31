@@ -2,7 +2,8 @@
 layout: post
 title: "Cloudflare Tunnels with Docker are surprisingly simple!"
 date: 2024-09-19
-categories: infrastructure https dns cloudflare proxy docker
+categories: [infrastructure]
+tags: [https, dns, cloudflare, proxy, docker]
 ---
 
 The [Tailscale funnels I setup earlier](https://blog.gedas.dev/tailscale-funnel/) was a fun experiment, but it had way too many moving parts for my liking. I could [move to zrok](https://blog.gedas.dev/exposing-minecraft-with-zrok/) for my web applications (like I did with Minecraft), but I learnt of another product.
@@ -33,23 +34,23 @@ Going to [Cloudflare Zero Trust Dashboard](https://one.dash.cloudflare.com/), ta
 
 * Select `cloudflared`, this is the tool we will use. Click Next.
 
-![](../assets/posts/2024-09-19-cloudflare-tunnels/tunnels-1.png)
+![](/assets/posts/2024-09-19-cloudflare-tunnels/tunnels-1.png)
 
 * Name your tunnel. For this guide I will deploy my old project `Alderto`, so will use that as the name. Click Save tunnel.
 
-![](../assets/posts/2024-09-19-cloudflare-tunnels/tunnels-2.png)
+![](/assets/posts/2024-09-19-cloudflare-tunnels/tunnels-2.png)
 
 * Get your token. Cloudflare should have generated a token for you. Select docker and click the marked textbox to copy the command. While the command is useful to run it, we are only interested in the token. Save for later. Click Next.
    
 Note that the token is much longer than what is shown on screen :>
 
-![](../assets/posts/2024-09-19-cloudflare-tunnels/tunnels-3.png)
+![](/assets/posts/2024-09-19-cloudflare-tunnels/tunnels-3.png)
 
 * Create routing rules. This section contains 2 parts: public hostname and service
    1) Public hostname requires you to put a subdomain, domain, and a path prefix. You can change this bit to your liking, however for me, all I need is to route all traffic from https://alderto.gedas.dev to my service, so will configure it as such.
    2) Service information is a bit trickier. The service type you will most likely want to be `HTTP`, and the URL, will need to be the same as the service name in the `docker-compose.yml` file. For now I will call it `app`. If your application serves traffic on port other than 80, specify it here. Click Save Tunnel.
 
-![](../assets/posts/2024-09-19-cloudflare-tunnels/tunnels-4.png)
+![](/assets/posts/2024-09-19-cloudflare-tunnels/tunnels-4.png)
 
 ### Creating the application
 
@@ -99,7 +100,7 @@ CF_TOKEN="eyJhIjoiMj...MY_LONG_TOKEN_VALUE"
 
 Starting up the docker compose project and navigating to the site we set up (https://alderto.gedas.dev/), we see that it works great! We even have https working by default :o
 
-![](../assets/posts/2024-09-19-cloudflare-tunnels/nextcloud.png)
+![](/assets/posts/2024-09-19-cloudflare-tunnels/nextcloud.png)
 
 ## Hardening the access
 

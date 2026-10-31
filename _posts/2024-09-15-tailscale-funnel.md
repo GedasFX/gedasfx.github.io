@@ -2,7 +2,8 @@
 layout: post
 title: Exposing my local server on the internet using Tailscale, https, and a custom domain
 date: 2024-09-15
-categories: infrastructure tailscale docker traefik https proxy
+categories: [infrastructure]
+tags: [tailscale, docker, traefik, https, proxy]
 ---
 
 I should start with a disclaimer, please for the love of god, do not use this setup for production use. This article is for educational purposes only!
@@ -99,7 +100,7 @@ In short:
 
 * [3] Create `OAuth` client with scope `devices:write`, and tag `tag:container`. Feel free to give a `Description` too.
 
-<img src="../assets/posts/2024-09-15-tailscale-funnel/oauth-client.png" alt="Example of creation window" height="800" />
+<img src="/assets/posts/2024-09-15-tailscale-funnel/oauth-client.png" alt="Example of creation window" height="800" />
 
 * [4] Put together a `docker-compose.yml` file:
 
@@ -166,7 +167,7 @@ Running `docker compose up -d` allowed me to access this container from the inte
 Finally, wait a few minutes for website to start up, get certificates, and properly obtain DNS records. If after some time you see that the website still is not available, here are some troubleshooting tips:
 
 1. Check if the host is up [on the dashboard](https://login.tailscale.com/admin/machines). You should see something like the following:
-![Image showing host being up](../assets/posts/2024-09-15-tailscale-funnel/host%20is%20up.png)
+![Image showing host being up](/assets/posts/2024-09-15-tailscale-funnel/host%20is%20up.png)
 
 1. Check if you can access the url from a machine on tailnet. DNS propagates quicker within the VPN so good way to check. If its not working from within a tailnet, something has gone wrong.
 

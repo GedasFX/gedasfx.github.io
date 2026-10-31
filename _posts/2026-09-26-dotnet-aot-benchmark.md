@@ -2,7 +2,8 @@
 layout: post
 title: "How small is .NET native AOT, really? Benchmarked against Node, Python and regular .NET"
 date: 2026-09-26
-categories: dotnet aot performance docker benchmark
+categories: [dotnet]
+tags: [aot, performance, docker, benchmark]
 ---
 
 I keep a few templates for new services: a Node one, a Python one and a .NET one. Most of what I write are small things, like Discord bots and tiny APIs, and they all run on one small home server. There, memory and image size matter more to me than raw speed.

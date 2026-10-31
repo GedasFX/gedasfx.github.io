@@ -2,7 +2,8 @@
 layout: post
 title: "SRV Records: how Minecraft finds where to connect"
 date: 2024-09-17
-categories: infrastructure minecraft dns playitgg
+categories: [infrastructure]
+tags: [minecraft, dns, playitgg]
 ---
 
 Before today I though connecting to Minecraft was as simple as "give IP address and a port, if port not specified, use 25565". The IP can be provided directly, or resolved from DNS `A` type records. That is... until I started playing around with [playit.gg](https://playit.gg/).
@@ -15,7 +16,7 @@ I was playing around and created a tunnel between my machine and and their serve
 
 The creation process was strange, however. When I attempted to create a server, I could select TCP, but also Minecraft (specifically). Intrigued I wanted to see what was up. Maybe it was just a simple configuration helper that just prefilled the port to 25565? When I started the tunnel I was greeted to this:
 
-![](../assets/posts/2024-09-17-minecraft-srv-records/playit-allocation-domain.png)
+![](/assets/posts/2024-09-17-minecraft-srv-records/playit-allocation-domain.png)
 
 ## Why are there two IP addresses?
 
@@ -58,7 +59,7 @@ Non-authoritative answer:
 
 I had about enough launching and closing minecraft to see if its up, I decided to use [mcsrvstat.us](https://mcsrvstat.us) to look if it can be connected to. And what I thought was going to be a shortcut in my investigation, it blew the case right open. This is what I saw:
 
-![Alt text](../assets/posts/2024-09-17-minecraft-srv-records/srv-record.png)
+![Alt text](/assets/posts/2024-09-17-minecraft-srv-records/srv-record.png)
 
 Hold on.. SRV record? What does that result?
 

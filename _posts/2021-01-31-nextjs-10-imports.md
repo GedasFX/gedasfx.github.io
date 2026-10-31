@@ -2,7 +2,8 @@
 layout: post
 title: How does Next.js 10 handle imports?
 date: 2021-01-31
-categories: nextjs performance
+categories: [nextjs]
+tags: [performance]
 ---
 
 This is an older writeup I did, might as well leave all my blogs in one place.

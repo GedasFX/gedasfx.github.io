@@ -2,7 +2,8 @@
 layout: post
 title: Exposing my local Minecraft server on the internet using zrok
 date: 2024-09-16
-categories: infrastructure docker minecraft zrok proxy
+categories: [infrastructure]
+tags: [docker, minecraft, zrok, proxy]
 ---
 
 Well the title should really say exposing arbitrary TCP or UDP ports to the internet as this is basically what is being done here.
@@ -17,7 +18,7 @@ Like before, at the end of this procedure I discovered an easier SaaS approach, 
 
 Please consult The Diagram™️ for a second:
 
-![Diagram explaining everything](../assets/posts/2024-09-16-exposing-minecraft-with-zrok/da-diagram.png)
+![Diagram explaining everything](/assets/posts/2024-09-16-exposing-minecraft-with-zrok/da-diagram.png)
 
 We currently have a use case where a user can connect to the home server which is running a minecraft server inside Docker. We want other people to connect too, and we can accomplish this via zrok.
 
@@ -284,12 +285,12 @@ This is where the `ZROK_UNIQUE_NAME` we defined in previous step comes into play
 
 When all docker compose projects are up and running, opening minecraft shows that everything works great!
 
-![](../assets/posts/2024-09-16-exposing-minecraft-with-zrok/login.png)
-![](../assets/posts/2024-09-16-exposing-minecraft-with-zrok/server_up.png)
+![](/assets/posts/2024-09-16-exposing-minecraft-with-zrok/login.png)
+![](/assets/posts/2024-09-16-exposing-minecraft-with-zrok/server_up.png)
 
 When looking at the API, this is what you should see:
 
-![](../assets/posts/2024-09-16-exposing-minecraft-with-zrok/final_graph.png)
+![](/assets/posts/2024-09-16-exposing-minecraft-with-zrok/final_graph.png)
 
 This graph shows:
 1. Your user.
