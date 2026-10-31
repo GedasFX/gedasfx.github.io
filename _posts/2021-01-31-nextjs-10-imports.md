@@ -89,10 +89,8 @@ export default function Home() {
 ```
 
 Server: 61.46 KB
-![image-20210130193518952](C:\Users\gedim\Desktop\How does Next.js handle imports.assets\image-20210130193518952.png)
 
 Client: 297.87 KB
-![image-20210130193449073](C:\Users\gedim\Desktop\How does Next.js handle imports.assets\image-20210130193449073.png)
 
 I tested the size again by adding `getStaticProps` and `getServerSideProps` and, while bundle size increased, the increase was negligible. 
 
