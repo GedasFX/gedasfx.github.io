@@ -11,7 +11,7 @@ I keep a few templates for new services: a Node one, a Python one and a .NET one
 
 For a quick answer, see [Results](#results).
 
-# The contestants
+# What I compared
 
 | Image | What it is | Base image |
 |---|---|---|
@@ -98,50 +98,36 @@ So, in short:
 
 # Do my libraries work with AOT?
 
-A small binary means nothing if the libraries I need break. My bots use [NetCord](https://netcord.dev/) for Discord and SQLite through Dapper. Plain Dapper generates code at runtime, which AOT can't do. [Dapper.AOT](https://aot.dapperlib.dev/) generates that code at build time instead.
+My bots use [NetCord](https://netcord.dev/) for Discord and SQLite through [Dapper.AOT](https://aot.dapperlib.dev/), which moves Dapper's runtime code generation to build time. A small probe app built a NetCord `GatewayClient` and ran a parameterised Dapper query against in-memory SQLite. All three publish with 0 warnings, and the query returned the expected rows:
 
-I published a small probe app with all three. It builds a NetCord `GatewayClient` (without connecting) and runs a parameterised Dapper query against in-memory SQLite:
+| Library | Version |
+|---|---|
+| NetCord | 1.0.0-beta.26 |
+| Dapper.AOT (+ Dapper 2.1.89) | 1.1.0 |
+| Microsoft.Data.Sqlite | 10.0.12 |
 
-| Library | Version | AOT publish |
-|---|---|---|
-| NetCord | 1.0.0-beta.26 | 0 warnings |
-| Dapper.AOT (+ Dapper 2.1.89) | 1.1.0 | 0 warnings with `[module: DapperAot]` |
-| Microsoft.Data.Sqlite | 10.0.12 | 0 warnings |
-
-The query returned the 2 rows I expected. 🎉
-
-## The trap
-
-Dapper.AOT does nothing until you turn it on with one attribute:
-
-```csharp
-[module: DapperAot]
-```
-
-Without it, the publish **still succeeds**, with 3 warnings (DAP005, IL2104, IL3053). Then the first query crashes at runtime with `PlatformNotSupportedException: Dynamic code generation is not supported`, thrown from `Dapper.SqlMapper.CreateParamInfoGenerator`.
-
-This is why I keep `TreatWarningsAsErrors` on. With it, the build fails, and I don't find out from a crash.
-
-Two more things:
-
-- Dapper.AOT doesn't bring in Dapper. It rewrites Dapper's calls, so you still reference the `Dapper` package yourself.
-- Generated interceptors can go stale. My first run without the attribute *passed*, because old generated files from an earlier build were still being compiled in. After a clean build it crashed as expected.
+Dapper.AOT needs `[module: DapperAot]` in the project, and the `Dapper` package referenced next to it. Without the attribute, the publish still succeeds with warnings, and the first query fails at runtime. One more reason to keep `TreatWarningsAsErrors` on.
 
 # How I tested it
 
-- **Host:** WSL2 Ubuntu 26.04, 16 vCPU, 15 GB RAM, Docker Desktop 29.6.1 with the containerd image store. Date: 2026-09-26.
-- **Build:** `docker build --no-cache`, with base images pulled beforehand. The measured AOT builds used `sdk:10.0` with clang and zlib1g-dev installed by apt; the Dockerfile above uses `sdk:10.0-noble-aot` instead, and its runtime stage is unchanged.
-- **Startup:** the time from just before `docker run -d` to the first 200 on `/health`, polling every 20 ms. Median of 3 runs.
-- **Idle memory:** `docker stats --no-stream`, 10 s after startup, with no traffic.
-- **Load:** 20 s at 50 connections against `GET /health`, using [oha](https://github.com/hatoo/oha) from a container on the same Docker network. Every image had a 100% success rate.
+All runs were on 2026-09-26: WSL2 Ubuntu 26.04 (16 vCPU, 15 GB RAM), Docker Desktop 29.6.1 with the containerd image store. Each image ran alone with `--cpus 2 --memory 512m`.
 
-  ```bash
-  docker run --rm --network bench-net ghcr.io/hatoo/oha \
-    -z 20s -c 50 --no-tui --output-format json http://svc:3000/health
-  ```
+| Column | How it was measured |
+|---|---|
+| Build | `docker build --no-cache`, base images pulled beforehand |
+| Startup | from just before `docker run -d` to the first 200 on `/health`, polled every 20 ms; median of 3 |
+| Idle memory | `docker stats --no-stream`, 10 s after startup, no traffic |
+| Requests/s, p99 | [oha](https://github.com/hatoo/oha), 20 s at 50 connections on `GET /health`, from a container on the same network; 100% success for every image |
+| Peak memory | `docker stats` streamed during the load (~1 sample/s); a 100 ms cgroup sampler and `memory.peak` agreed within 0.3 MiB |
 
-- **Peak memory:** `docker stats` streaming during the load (about 1 sample per second). A 100 ms sampler on the container's cgroup and its `memory.peak` agreed with it within 0.3 MiB.
-- **Probe:** `dotnet publish -c Release -r linux-x64 -p:PublishAot=true` in the same build image as the measured spike.
+The load command:
+
+```bash
+docker run --rm --network bench-net ghcr.io/hatoo/oha \
+  -z 20s -c 50 --no-tui --output-format json http://svc:3000/health
+```
+
+The measured AOT builds used `sdk:10.0` with clang and zlib1g-dev from apt, not the `sdk:10.0-noble-aot` image in the Dockerfile above; the runtime stage is the same. The library probe was published from that same build image with `dotnet publish -c Release -r linux-x64 -p:PublishAot=true`.
 
 # Caveats
 
