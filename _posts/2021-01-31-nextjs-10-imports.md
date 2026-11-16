@@ -14,13 +14,13 @@ This is an older writeup I did, might as well leave all my blogs in one place.
 This page was created 2024-09-15. See original below:
 
 
-# How does Next.js 10 handle imports?
+## How does Next.js 10 handle imports?
 
 I was trying to reduce the bundle size of the final client bundle, and I found an interesting feature about Next.js. In one file it handles both server and client side code. This is very convenient, however what happens when you import a third party module at the top of the file? Does the client bundle size get increased if the imported module is only used in `getStaticProps` or `getServerSideProps`?
 
 For a quick answer, see [Conclusions](#conclusions).
 
-## Different kinds of imports
+### Different kinds of imports
 
 There are many ways to import modules and other files in JavaScript, however all methods can be categorized into two main ways: at importing inline or at the top of the file. An example can be seen here:
 
@@ -41,13 +41,13 @@ export const func = async () => {
 
 If the bundler is not smart about it, the second may provide an advantage.
 
-## Testing
+### Testing
 
 To analyze bundle sizes [@next/bundle-analyzer](https://www.npmjs.com/package/@next/bundle-analyzer) plugin will be used, which is [included in my personal starting template](https://github.com/GedasFX/nextjs-starter). After the build, the plugin would then produce two analysis files (one for server and one for client), which could then be inspected manually. 
 
 For the data set, I will test with 3 common use cases - importing a .json file, reading a file using an import from Node.js ([fs](https://nodejs.org/api/fs.html)), and lastly I will try importing an 3rd party library ([Apollo Client](https://www.npmjs.com/package/@apollo/client)).
 
-### Obtaining data
+#### Obtaining data
 
 I went to a [GraphQL API](https://api.graphql.jobs/), and got myself a bit of sample data using the following schema:
 
@@ -73,7 +73,7 @@ I went to a [GraphQL API](https://api.graphql.jobs/), and got myself a bit of sa
 
 The data ended up being roughly 254KB in size. If there were any optimizations the compilers performed, a change of even 0.01KB would be noticeable in the final bundle.
 
-### Control group
+#### Control group
 
 To analyze how much an import adds, lets first check what is the base imports of the project. Again, I use my starter template for this.
 
@@ -95,7 +95,7 @@ Client: 297.87 KB
 
 I tested the size again by adding `getStaticProps` and `getServerSideProps` and, while bundle size increased, the increase was negligible. 
 
-##### Note on Typescript imports
+###### Note on Typescript imports
 
 In my files you will see something along the lines of:
 
@@ -107,7 +107,7 @@ type Props = {
 
 Type declaration DO NOT carry over when the code gets converted from JS from TS, so the bundle size is not going to be affected by it.
 
-## Collecting results
+### Collecting results
 
 All of my tests and diffs can be found [here](https://github.com/GedasFX/nextjs-import-cost-tests/commits/main). Starting with [this commit](https://github.com/GedasFX/nextjs-import-cost-tests/commit/498f11abc50b2ba74ba462fa99539d054391cfa8) for Static - Nothing, and ending with [SSG - Apollo  (Server + Client)](https://github.com/GedasFX/nextjs-import-cost-tests/commit/6c6b56430e3f6babaa6b3d6790bf8145b6a14ea9). To get the results for yourself, checkout the appropriate commit, and then run
 
@@ -122,7 +122,7 @@ This will cleanup .next directory, build and analyze the bundle and start the se
 * **Page** & **Bundle** both transferred and resource come from Google Chrome Dev Tools - Network, where I check Page for the document request, and Bundle for all of the requests.
 * **index.*** files come from the generated files - `./.next/server/pages/index.*`.
 
-## Findings
+### Findings
 
 So what are the results? Here they are:
 
@@ -147,9 +147,9 @@ So what are the results? Here they are:
 
 Looks like an explanation is necessary. Lets begin with the easiest to understand. The second group (the FS import one), is pretty static. It does make sense, because there is little difference for the client between SSR and SSG. Another finding is the fact that dynamic imports are not necessary. 
 
-### Making sense of the data
+#### Making sense of the data
 
-#### Rendering: SSG vs SSR
+##### Rendering: SSG vs SSR
 
 [Next.js docs suggest using SSG over SSR whenever possible](https://nextjs.org/docs/basic-features/data-fetching). This does make sense intuitively, as fetching data and caching it, in 99,9% of the cases would be faster than recreating it every request. Still, I wanted to check what are the compilation differences from SSG to SSR.
 
@@ -165,7 +165,7 @@ To begin from the obvious, as mentioned before, SSR does not generate `.html` or
 
 Well it appears, that from code side, nothing unexpected has changed. All that means is that, as the official docs state, **use SSG over SSR whenever possible**.
 
-#### Imports: Static vs Dynamic
+##### Imports: Static vs Dynamic
 
 For simplicity, lets analyze 2 very similar results. `SSG - FS` and `SSG - FS (Dynamic)` have very similar results. The same translates well when using a third party library. Analyzing the compiled code might give us insight as to why that is. Running `code --diff index1.js index2.js` lets us see how the final JavaScript code was transformed. There are a couple of things to look at but most important is the removal of a harmony import:
 
@@ -197,13 +197,13 @@ The require mode in our case is 0111 (7), which is not important to understand h
 if(mode & 1) value = __webpack_require__(value);
 ```
 
-##### Ok what about the client side?
+###### Ok what about the client side?
 
 Empirical data suggests that even after we imported a [sizable module](https://bundlephobia.com/result?p=@apollo/client@3.3.7) to be used in server-side, the bundle, which was sent to the client, size didn't change at all. It doesn't matter how they did it (likely a fancier tree-shake), but **modules imported to ONLY be used in `getStaticProps` or `getServerSideProps` do not get bundled into the client-side code**.
 
 With those findings it is safe to say that **unless the method is not going to be called, using dynamic import is actually slower overall**. Considering our use case, `getStaticProps` or `getServerSideProps` will be called regardless, **it is unwise/unnecessary to use dynamic imports**.
 
-#### Bonus: Server-Side modules.
+##### Bonus: Server-Side modules.
 
 Code from node_modules appears to not get bundled together in the server-side code. This means that the **server will cease to work properly if node_modules folder were to be deleted**.
 
@@ -271,11 +271,11 @@ There is a workaround though for SSG though: I have accidently discovered that i
 
 All in all, even though client side libraries are not being used on `getStaticProps`, they are still being referenced in the `.js` file, which will stop execution if the library no longer exists in node_modules. **Apart from a few edge cases, to avoid unexpected issues, all client-side libraries must stay in node_modules**.
 
-#### What if a module is being used both in server and client side?
+##### What if a module is being used both in server and client side?
 
 Unsurprisingly, if you reference the client in your client-side component, it gets bundled in by `webpack` and increases the client bundle size. Server "bundle" size does not change, as no bundling is performed on the server side.
 
-## Conclusions
+### Conclusions
 
 **All imports, which are then used ONLY in either `getStaticProps` or `getServerSideProps` will not be sent over to the client. It is perfectly fine (and likely better) to write the import statement at the top of the file, rather than in the method itself.** If the import is used anywhere else, it will be sent over to the client.
 

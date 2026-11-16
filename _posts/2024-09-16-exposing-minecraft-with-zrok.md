@@ -8,13 +8,13 @@ tags: [docker, minecraft, zrok, proxy]
 
 Well the title should really say exposing arbitrary TCP or UDP ports to the internet as this is basically what is being done here.
 
-# Motivation
+## Motivation
 
 After [exposing my HTTP web servers to the internet](https://blog.gedas.dev/exposing-minecraft-with-zrok/), I decided what else can I proxy via my virtual machine. How about.. my Minecraft server? :o
 
 Like before, at the end of this procedure I discovered an easier SaaS approach, which I [talk about at the end](#can-we-do-better). If you want a simple one-program-does-it-all solution, just skip to there. If not.. I hope you find this article educational!
 
-# The Plan
+## The Plan
 
 Please consult The Diagram™️ for a second:
 
@@ -24,7 +24,7 @@ We currently have a use case where a user can connect to the home server which i
 
 The zrok tunnel part really comes down to 2 main components: `share` and `access`. Our home server is going to _share_ to the zrok tunnel a resource (minecraft), and the public virtual machine will _access_ it and expose it publicly. All will also need to be coordinated via zrok API itself. All 3 parts will be discussed individually.
 
-## Setting up zrok
+### Setting up zrok
 
 If [zrokNET STARTER plan](https://zrok.io/pricing/) limitations are acceptable, this step can be skipped almost entirely, just make sure you have an account you can `zrok enable` with.
 
@@ -32,7 +32,7 @@ Personally I went with self-hosted approach, mostly as a challenge. The [Docker 
 
 If you follow the self-hosted approach, follow the guide till you create an account.
 
-### Customizations of the compose.yml
+#### Customizations of the compose.yml
 
 What guide doesn't tell you is that you need to expose the API to the internet for users to connect. That can be done by setting `ZROK_INSECURE_INTERFACE=0.0.0.0` in the `.env` file, or, what i did, was use traefik to expose the service with a TLS certificate.
 
@@ -125,13 +125,13 @@ networks:
 
 After doing all this, my api was openable on https://api.zrok.gedas.dev/
 
-## Setting up the private access
+### Setting up the private access
 
 Now that we have an account and we have a token to enable environments, the rest is going to be a cake walk!
 
 This section is based from [this guide](https://docs.zrok.io/docs/guides/docker-share/docker_private_share_guide/).
 
-### `share` server
+#### `share` server
 
 I downloaded the `compose.yml` file [given by the guide](https://docs.zrok.io/zrok-private-share/compose.yml), and edited it to be the following:
 
@@ -222,7 +222,7 @@ Running the compose file up, will create both minecraft server and will share it
 
 > **IMPORTANT** To clean up after yourself, before shutting down the environment for the final time, run `sudo docker compose exec zrok-share zrok disable`, before `sudo docker compose down`. If you forget, no big deal, you can manually clean up in the API UI.
 
-### `access` server
+#### `access` server
 
 We are almost done, just left to set up the access.
 
@@ -281,7 +281,7 @@ ZROK_ACCESS_TOKEN="minecraft1"
 
 This is where the `ZROK_UNIQUE_NAME` we defined in previous step comes into play. Just make sure `ZROK_ACCESS_TOKEN` matches the value and it will work. The `ZROK_ENABLE_TOKEN`, and `ZROK_API_ENDPOINT`, work identically to previous step.
 
-# Results
+## Results
 
 When all docker compose projects are up and running, opening minecraft shows that everything works great!
 
@@ -298,11 +298,11 @@ This graph shows:
 3. The shared minecraft server resource.
 4. The accessed resource via tunnel (dotted line shows the bridge via zrok).
 
-# Can we do better?
+## Can we do better?
 
 Why yes, of course we can. We actually have 2 main "simple" cases.
 
-## SSH Tunnel
+### SSH Tunnel
 
 If you have a virtual machine you SSH into, you might as well just set up an SSH tunnel. In the past this is what I used to do and it worked out great.
 
@@ -322,7 +322,7 @@ It does have some problems though:
 1. It only woks with TCP traffic. [There are janky solutions to forward UDP over TCP](https://superuser.com/questions/53103/udp-traffic-through-ssh-tunnel), however I didn't even attempt it.
 2. Tunnels eventually close after there has been no activity on them. A tool called `autossh` seems to work great to bypass ([thread](https://superuser.com/questions/37738/how-to-reliably-keep-an-ssh-tunnel-open)), but I wanted a more 'Docker' approach.
 
-## [playit.gg](https://playit.gg/)
+### [playit.gg](https://playit.gg/)
 
 Another service we can make use of is playit.gg. They offer proxy services for arbitrary tcp/udp traffic.
 

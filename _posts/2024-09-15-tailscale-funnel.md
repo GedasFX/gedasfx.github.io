@@ -8,7 +8,7 @@ tags: [tailscale, docker, traefik, https, proxy]
 
 I should start with a disclaimer, please for the love of god, do not use this setup for production use. This article is for educational purposes only!
 
-# The Problem
+## The Problem
 
 My AWS free trial is expiring, and I have some non-static or serverless website hosted there with virtually no traffic. Now a sane person would either: (1) drop the projects, (2) start paying $7.2 per month to Amazon, or (3) switch hosts. I didn't want to drop the projects, and it was definitely not worth to pay the monthly fee, so I decided to switch to something I already had: my server I have at home.
 
@@ -31,11 +31,11 @@ $ sudo modprobe tun
 
 Well that is unexpected. Looks like the provider does not allow access to manage network. Not a big deal, time for plan B.
 
-# Plan B
+## Plan B
 
 Before we begin, I would like to mention the "correct" solutions. [Plan O](#plan-o---just-expose-the-port-dummy) (allow users to access your machine directly) and [Plan A](#plan-a---just-use-a-vpn) (use a VPN) are clearly better, more secure, and require significantly less effort, however, they also require technical infrastructure that I simply do not and can not have.
 
-## The Idea
+### The Idea
 
 Here is the general idea I had before I put everything together.
 
@@ -45,7 +45,7 @@ The first issue is not much a big deal for now, as I want to expose websites. Th
 
 Okay! We now have a potential way to expose our service to the internet, but we need to still set up the proxy. For that I will just use [traefik](https://doc.traefik.io/traefik/). Any other proxy works too, but for this example I will use traefik.
 
-## Putting it together - Tailscale
+### Putting it together - Tailscale
 
 To serve something via Tailscale funnel is quite easy! If you have tailscale installed, you can run:
 
@@ -69,7 +69,7 @@ $ sudo tailscale funnel http://localhost:5000
 # |-- proxy http://localhost:5000
 ```
 
-## Putting it together - Tailscale Docker
+### Putting it together - Tailscale Docker
 
 Running serve from host machine is good and all, but we can do better - we can run Tailscale in a docker container together with the service. I personally host everything in Docker anyway, so this works out great.
 
@@ -173,7 +173,7 @@ Finally, wait a few minutes for website to start up, get certificates, and prope
 
 2. Give more permissions to OAuth token. Personally I had issues with DNS until I gave `dns:write` OAuth token scope, after which all started working, however, it continued working after i returned to original token, so your mileage may vary 🤷.
 
-## Putting it together - Proxy Docker
+### Putting it together - Proxy Docker
 
 Proxying requests should be somewhat straight forward, any proxy works, but I will show you my solution for completeness. This also requests uses Let's Encrypt to create certificates.
 
@@ -247,29 +247,29 @@ With this configuration, that's it! Accessing https://ws2.gedas.dev/ will use `t
 
 In this example, update `certificatesResolvers.main.acme.email` (for https), `http.[hostname].entrypoints.rule` (to the correct hostname), and `http.services.[hostname].loadbalancer.servers[0].url` to match your case. To add more applications to route, just add extra routers and services.
 
-# Alternatives
+## Alternatives
 
-## Plan O - Just expose the port.. dummy
+### Plan O - Just expose the port.. dummy
 
 When proxying via Cloudflare, its safe-ish to just expose the server you have at home and allow only [CloudFlare IPs](https://www.cloudflare.com/ips/) to access your machine via firewall rules, however I don't really have the option of having an external IP (thanks ISP).
 
-## Plan A - Just use a VPN
+### Plan A - Just use a VPN
 
 What I am doing here is effectively a VPN, but just significantly less private. This was my first idea too, however the VPS provider I use does not permit access to `/dev/net/tun`, so I was out of luck setting up Tailscale.
 
 A different VPS, or a different VPN may have solved this issue, but I didn't try those approaches.
 
-## Plan O-1 Just use the VPS to host the whole server
+### Plan O-1 Just use the VPS to host the whole server
 
 ... fair, I do have no users, my cheap little-to-no resource VPS would have worked regardless.
 
 However, I did want to have MY data on MY server. If I have a project that blows up I will obviously just use this approach as eventually my own internet bandwidth would start to suffer, but for the projects I currently host - this is nothing.
 
-## Plan B-0 Just use the URL provided by the funnel
+### Plan B-0 Just use the URL provided by the funnel
 
 ... also fair, but I wanted my pretty domain :>
 
-# Closing thoughts
+## Closing thoughts
 
 If what you read sounds insane, its because it is. You should not do this. But I had fun doing it, and I feel like I should get back to documenting my findings more often, so here we are.
 

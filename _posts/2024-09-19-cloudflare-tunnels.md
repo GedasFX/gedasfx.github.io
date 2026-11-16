@@ -10,11 +10,11 @@ The [Tailscale funnels I setup earlier](https://blog.gedas.dev/tailscale-funnel/
 
 A tip I received from a friend (thanks [Rains](https://github.com/AnnoyingRain5)) was to try out [CloudFlare Tunnels](https://www.cloudflare.com/products/tunnel/)!
 
-## What do I need a tunnel for again?
+### What do I need a tunnel for again?
 
 I want to self-host a project I have on my from my local computer, however it cannot be reached publicly due to ISP imposed limitations. A tunnel is like a VPN where it would allow connections regardless if you do or do not have an external IP, by using a computer with a routable IP and then proxying requests.
 
-## What's so special about Cloudflare Tunnels
+### What's so special about Cloudflare Tunnels
 
 [My original setup with tailscale funnels](https://blog.gedas.dev/tailscale-funnel/) worked, but it had very big flaws that were bothering me.
 
@@ -22,13 +22,13 @@ For one it was performance. The requests were bouncing all across the world and 
 
 The whole janky setup was invented purely to be able to use my own domains instead of ones provided by tailscale. Cloudflare tunnels.. they just let you do it! Free of charge! Don't mind if I do!
 
-## Setting it up
+### Setting it up
 
 As usual I want to use Docker. While you can create Cloudflare tunnels using CLI, I opted to instead do a couple of clicks on the dashboard. This removed the need to stress about authenticating my CLI client. Sometimes clicking can be good enough :D.
 
 The steps taken here largely follow [this guide from Cloudflare](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/create-remote-tunnel/), adapted to use Docker.
 
-### Creating a tunnel
+#### Creating a tunnel
 
 Going to [Cloudflare Zero Trust Dashboard](https://one.dash.cloudflare.com/), tab Networks -> Tunnels, you can create a tunnel.
 
@@ -52,7 +52,7 @@ Note that the token is much longer than what is shown on screen :>
 
 ![](/assets/posts/2024-09-19-cloudflare-tunnels/tunnels-4.png)
 
-### Creating the application
+#### Creating the application
 
 As a sample application for our demo, we will deploy [awesome-compose/nextcloud-postgres](https://github.com/docker/awesome-compose/blob/18f59bdb09ecf520dd5758fbf90dec314baec545/nextcloud-postgres/compose.yaml) example.
 
@@ -96,13 +96,13 @@ Additionally, you can replace the the ${CF_TOKEN} bit with the actual token, or 
 CF_TOKEN="eyJhIjoiMj...MY_LONG_TOKEN_VALUE"
 ```
 
-## Testing it out
+### Testing it out
 
 Starting up the docker compose project and navigating to the site we set up (https://alderto.gedas.dev/), we see that it works great! We even have https working by default :o
 
 ![](/assets/posts/2024-09-19-cloudflare-tunnels/nextcloud.png)
 
-## Hardening the access
+### Hardening the access
 
 There is one extra thing we can do better protect ourselves against attacks. Right now we put the tunnel on the same network as the database, and attackers could route to it. We can prevent that by separating the networks in compose:
 
@@ -178,7 +178,7 @@ ping: bad address 'db'
 
 Here `db` does not resolve, but even if we manually specify the IP of the `db` service we won't get any results.
 
-## Closing Thoughts
+### Closing Thoughts
 
 I really like this setup as you do not need to manage a centralized place to manage your routing. Much like Traefik could use labels on containers to configure routing and keep all rules in the project, here we setup the tunnel daemon in the project itself. This way if you want to shut it down, `docker compose down` will tear down the tunnel connection as well. The DNS records would need to be adjusted manually, but its not that big of a deal.
 

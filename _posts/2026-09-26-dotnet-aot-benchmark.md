@@ -12,7 +12,7 @@ I keep a few templates for new services: a Node one, a Python one and a .NET one
 
 For a quick answer, see [Results](#results).
 
-# What I compared
+## What I compared
 
 | Image | What it is | Base image |
 |---|---|---|
@@ -78,7 +78,7 @@ ENTRYPOINT ["./AotSpike"]
 
 `TreatWarningsAsErrors` matters here. If a trim or AOT warning shows up, the build fails instead of the app failing later at runtime. The spike builds with 0 warnings.
 
-# Results
+## Results
 
 Every service ran alone under `docker run --cpus 2 --memory 512m`. I ran everything twice; the second run is in brackets.
 
@@ -97,7 +97,7 @@ So, in short:
 - **Throughput:** the same as regular .NET. Both .NET images used the full 2 CPUs. Node and Python used about 1 CPU each, because each is one process with one event loop or worker. So this column says more about the runtime model than about the language.
 - **Build time:** this is the cost. The restore takes 34–36 s (it pulls the native compiler packages) and the native compile ~13 s. The table's ~90–100 s also includes 39–50 s of installing clang by hand, which the `-aot` SDK image above already ships.
 
-# Do my libraries work with AOT?
+## Do my libraries work with AOT?
 
 My bots use [NetCord](https://netcord.dev/) for Discord and SQLite through [Dapper.AOT](https://aot.dapperlib.dev/), which moves Dapper's runtime code generation to build time. A small probe app built a NetCord `GatewayClient` and ran a parameterised Dapper query against in-memory SQLite. All three publish with 0 warnings, and the query returned the expected rows:
 
@@ -109,7 +109,7 @@ My bots use [NetCord](https://netcord.dev/) for Discord and SQLite through [Dapp
 
 Dapper.AOT needs `[module: DapperAot]` in the project, and the `Dapper` package referenced next to it. Without the attribute, the publish still succeeds with warnings, and the first query fails at runtime. One more reason to keep `TreatWarningsAsErrors` on.
 
-# How I tested it
+## How I tested it
 
 All runs were on 2026-09-26: WSL2 Ubuntu 26.04 (16 vCPU, 15 GB RAM), Docker Desktop 29.6.1 with the containerd image store. Each image ran alone with `--cpus 2 --memory 512m`.
 
@@ -130,7 +130,7 @@ docker run --rm --network bench-net ghcr.io/hatoo/oha \
 
 The measured AOT builds used `sdk:10.0` with clang and zlib1g-dev from apt, not the `sdk:10.0-noble-aot` image in the Dockerfile above; the runtime stage is the same. The library probe was published from that same build image with `dotnet publish -c Release -r linux-x64 -p:PublishAot=true`.
 
-# Caveats
+## Caveats
 
 - **`/health` is a trivial endpoint.** It shows runtime overhead, not a real workload. My real AOT template (NetCord, SQLite, Dapper.AOT) came out heavier than the spike: a 64 MB image and 23.7 MiB idle, against 34 MB and 10.7 MiB. That is still well below the others, but check the numbers on your own app.
 - **No warm-up** before the load test. That may favour AOT over JIT a little.
@@ -139,7 +139,7 @@ The measured AOT builds used `sdk:10.0` with clang and zlib1g-dev from apt, not 
 - **Python had a handicap:** one uvicorn worker that logs every request. More workers would raise its number.
 - **`CreateSlimBuilder` without an `appsettings.json` logs every request** at Information level. That slows it down quite a bit, so the spike got an `appsettings.json` before I measured.
 
-# Closing thoughts
+## Closing thoughts
 
 For small services that sit idle most of the day, native AOT is a clear win: a tenth of the image, a third of the memory, a start that is basically instant, and no loss in speed. You pay for it with a slower build and a bit more care with libraries. Check that they support AOT, and make warnings fail the build.
 

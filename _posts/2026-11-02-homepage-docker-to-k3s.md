@@ -8,7 +8,7 @@ tags: [homepage, kubernetes, k3s, prometheus, snmp]
 
 [Homepage](https://gethomepage.dev/) is the dashboard I use for my homelab. Originally I used a read-only Docker socket to get stats but after the recent k3s migration, the stats were no longer available. Most of the data moved to a new Grafana dashboard but after a while, I started to miss the homey feel of the old dashboard with at-a-glance stats. Here I will document the steps I took to recreate it.
 
-# Status and stats: Kubernetes mode
+## Status and stats: Kubernetes mode
 
 Homepage has a [Kubernetes mode](https://gethomepage.dev/configs/kubernetes/) that reads pods instead of containers. It needs a ServiceAccount (the identity a pod uses to call the Kubernetes API) that can read pods, and the metrics API for CPU and memory. Get and list permissions are enough:
 
@@ -46,7 +46,7 @@ A tile can match many pods: Immich's four show as one card, with CPU and memory 
 
 **Nothing showed up at first.** For the Immich tile I had only set `podSelector`, which looked like enough. In v2.6.0, a tile shows Kubernetes status only when it also has `app:`, even if the `podSelector` already picks the pods. No error, no log line, just an empty tile.
 
-## "Partial" everywhere
+### "Partial" everywhere
 
 With status working, most tiles said **partial**, including bots that run a single pod. That surprised me, because everything was clearly up.
 
@@ -78,7 +78,7 @@ Matching the message, not just the condition, keeps out pods the kubelet evicts 
 
 My first version matched the pod's top-level status message instead. The reboot that tested it deleted 17 dead pods and missed 30: a pod that exits cleanly ends up Succeeded with an empty status message, and only the condition keeps the shutdown note. Matching the condition cleared those 30 as well. On the next reboot, the final version deleted all 47 pods the shutdown stopped, 34 seconds after boot, and left the Job pods alone.
 
-# Health: Docker's "healthy" has no counterpart
+## Health: Docker's "healthy" has no counterpart
 
 This is one gap I could not bridge and I admit - Docker did better here. Docker shows healthy or unhealthy from the container's health check. In Kubernetes mode, Homepage reads only the pod's phase: Pending, Running, Succeeded or Failed. A pod failing its readiness probe, the check Kubernetes runs to decide whether a pod can take traffic, still says running.
 
@@ -89,7 +89,7 @@ As a workaround I used [`siteMonitor`](https://gethomepage.dev/configs/services/
     siteMonitor: http://immich-server.immich:2283/api/server/ping
 ```
 
-# Widgets behind NetworkPolicies
+## Widgets behind NetworkPolicies
 
 On Docker, Homepage joined two shared networks, the proxy's and one just for widgets, and every app it showed had to join one of them. In the cluster that job falls to NetworkPolicies: each app's policy admits only the ingress controller, so a widget or `siteMonitor` times out until its target lets Homepage in.
 
@@ -105,7 +105,7 @@ ingress:
 
 It's more YAML than one wide rule on Homepage's side, but each app's policy then lists everything that can reach it.
 
-# Widgets without admin accounts
+## Widgets without admin accounts
 
 A few widgets wanted more access than I wanted to give to a dashboard. For two of them, SNMP was the way around: the protocol routers and NASes use to report their numbers.
 
@@ -139,11 +139,11 @@ rouser prometheus
 
 `rouser` means read-only. The `syno` community is DSM's own and only answers the NAS itself.
 
-# Setup
+## Setup
 
 Homepage v2.6.0 on one node of k3s v1.35.8+k3s1 (NixOS), as of 2026-11-02.
 
-# Closing thoughts
+## Closing thoughts
 
 In general, I knew moving to k3s would be a bumpy ride, as it really only starts making sense in a multi-node environment, and Docker really had all I needed, but I wanted to learn, and just for that all these bumps are worth it. I hope you find these useful; they took me a while to figure out.
 

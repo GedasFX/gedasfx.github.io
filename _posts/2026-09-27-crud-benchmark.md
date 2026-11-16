@@ -12,7 +12,7 @@ So this time each stack got a small CRUD API over SQLite, built twice: once with
 
 In short, without any magic tuning, .NET is the safe pick, and Python is a big trap. After tuning, Node, .NET and AOT end up close together.
 
-# The setup
+## The setup
 
 The API has four endpoints over two tables, products and categories:
 
@@ -38,7 +38,7 @@ Eight services, two per stack:
 
 The load is [k6](https://k6.io/) with 50 virtual users: 75% reads, 20% creates and 5% deletes, 10 s of warm-up and then 30 s measured. Every service ran alone under `--cpus 2 --memory 512m`, just like last time. Every number below is the mean of two clean rounds (consistent - within 2%).
 
-# Day one: my quickstart templates, no tuning
+## Day one: my quickstart templates, no tuning
 
 | | Node | Python | .NET | .NET AOT |
 |---|---|---|---|---|
@@ -55,11 +55,11 @@ The load is [k6](https://k6.io/) with 50 virtual users: 75% reads, 20% creates a
 
 **EF Core doesn't work with AOT.** It fails the build on AOT warnings (IL2026, IL3050). With warnings allowed it builds, but it needed four workarounds and reached only 6.0k. Dapper.AOT works fine, as in the last post.
 
-## Postgres check
+### Postgres check
 
 Looking at the results, I wondered if the bottleneck was the database choice. I tried Postgres and found it made things *slower*, even with Postgres on its own 2 CPUs: 2.4–2.9x for .NET and AOT raw, 1.3–1.7x for the ORMs and Node. At 10,000 rows, SQLite isn't the bottleneck. At a bigger scale it could be, but I'm testing the API, not the database, so SQLite stays.
 
-# Tuned: surprisingly close results
+## Tuned: surprisingly close results
 
 | | Node | Python | .NET | .NET AOT |
 |---|---|---|---|---|
@@ -82,20 +82,20 @@ What made the difference, biggest first:
 
 **AOT ends 10% behind JIT** on the same design (39.7k against 44.2k). It caught me off guard for sure, but that just shows how optimized the JIT is (or how much room for improvement is left for AOT).
 
-## Cache test
+### Cache test
 
 It is not really fair to add a cache on top for this test, but I really wanted to see just how much a cache does. And to be frank, for this test - surprisingly little. +17% for .NET and +23% for AOT. Primary-key reads are just that cheap!
 
 On Node and Python the cached version had to run as one process, since a per-process cache goes stale across processes, but then you lose the benefit of running them in parallel, and that's its own can of worms. Maybe a good topic to recheck later.
 
-# Conclusions I concluded (What I'd pick)
+## Conclusions I concluded (What I'd pick)
 
 - **.NET** when I want it to just work: fastest on day one, typed, and the ORM works. It needs the thread-pool cap in containers, but overall a good choice.
 - **Node** for web apps. It's surprisingly quick: not perfect, but perfectly serviceable for all web app needs. And with things like Svelte and Next.js you get to do the UI on top, which is a nice bonus. For enterprise size apps maybe I would look for a better backend for API, but my projects are definitely not there yet.
 - **.NET AOT**: I'll need to rethink this one. Maybe some CLI tool (maybe future comparison to Rust or Go?), basically something that needs to spin up fast. As it stands, not that good a deal, even with the memory benefits.
 - **Python** really disappointed me. It took quite a bit of finagling just to get near the other stacks. And frankly, I'm not a fan of the language itself. I'd likely use it only where its rich ecosystem helps, and even then as a sidecar to something else.
 
-# Test setup
+## Test setup
 
 - **Host:** WSL2, 16 vCPU, 15 GB RAM, Docker Desktop 29.6.1. Date: 2026-09-27.
 - **Images:** `node:24-slim`, `python:3.14-slim`, .NET 10 on `aspnet:10.0-noble-chiseled`, AOT built on `sdk:10.0-noble-aot` into `runtime-deps:10.0-noble-chiseled`.
@@ -104,7 +104,7 @@ On Node and Python the cached version had to run as one process, since a per-pro
 - **Postgres:** a fresh `postgres:18` per run, with its own `--cpus 2 --memory 1g` and `synchronous_commit=off`, to match SQLite's `synchronous=NORMAL`.
 - **k6 isn't the limit:** it pushed 95.9k req/s on `/health` against the AOT service.
 
-# Caveats
+## Caveats
 
 - **One machine, one data size, one workload.** The data fits in memory. A larger or more read-heavy dataset would shift the SQLite vs Postgres result.
 - **The Postgres services are day-one code on a default Postgres.** They show what switching costs, not how fast Postgres can go.
