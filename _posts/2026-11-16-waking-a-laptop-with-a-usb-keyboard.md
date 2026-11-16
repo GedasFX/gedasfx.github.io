@@ -8,7 +8,7 @@ tags: [esp32, esp-idf, usb, wake-on-lan, windows]
 
 My laptop is where I run the heavy stuff: it has the GPU. I don't want it running all day for the odd job, so I let it sleep when idle and planned to wake it from my desktop when I need it. Wake-on-LAN exists for exactly this. On this laptop it doesn't work, so I built a tiny USB "keyboard" that wakes it over Wi-Fi instead.
 
-# Wake-on-LAN: a dead end
+## Wake-on-LAN: a dead end
 
 Wake-on-LAN wakes a sleeping PC when its network card sees a "magic packet", a broadcast that repeats the card's MAC address. I tried it on both the Wi-Fi and the Ethernet card:
 
@@ -21,7 +21,7 @@ Wake-on-LAN wakes a sleeping PC when its network card sees a "magic packet", a b
 
 Everything Windows lets you set was set, and the cards still went dark the moment the laptop slept. The laptop is a Lenovo Legion Pro 5 16ARX8, and its BIOS setup shows only "PXE Boot to LAN". I unpacked the latest BIOS update: its setup strings include "Wake On LAN" and "Enable Wlan Power In S3 And S4", so the options exist in Lenovo's shared code but are hidden on this model. Setting hidden BIOS variables by hand can leave a laptop that doesn't boot, so I stopped there.
 
-# USB stays awake
+## USB stays awake
 
 One setting that *is* visible is "Always On USB": the USB ports keep their power while the laptop sleeps. And Windows lets USB keyboards wake the PC by default. USB has a feature for this, remote wakeup: while the host has the bus suspended, a device can signal "wake up", if the host allowed it to, and the host resumes.
 
@@ -31,7 +31,7 @@ The board has to be able to act as a USB device, which rules out most cheap ESP3
 
 ![The XIAO ESP32-S3 on its USB-C cable, its antenna on the laptop's lid](/assets/posts/2026-11-16-waking-a-laptop-with-a-usb-keyboard/board.jpg)
 
-# The firmware
+## The firmware
 
 I used [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/), Espressif's own framework, in C, with its TinyUSB component, [`esp_tinyusb`](https://components.espressif.com/components/espressif/esp_tinyusb). ESP-IDF's HID example already does the hard part; the firmware is about 300 lines.
 
@@ -84,7 +84,7 @@ The full source, with build and flash steps, is on GitHub: [esp32-usb-waker](htt
 
 I flashed it from the browser with Espressif's [web flasher](https://espressif.github.io/esptool-js/), which defaults to address `0x1000`, where the original ESP32 keeps its bootloader; the S3 wants `0x0`. Once the firmware runs, the board's USB belongs to the keyboard, so its serial port is gone: to flash it again, hold the BOOT button while plugging it in.
 
-# Calling it from the desktop
+## Calling it from the desktop
 
 I connect to the laptop over SSH, so the wake goes in front of that. OpenSSH can run a command before it connects with a `Match exec` block in `~/.ssh/config`:
 
@@ -107,13 +107,13 @@ while ((Get-Date) -lt $deadline) {
 }
 ```
 
-# How well it works
+## How well it works
 
 With the laptop asleep, `/status` says `suspended` with the wakeup allowed. After `/wake`, the board's USB is back up in about 3 seconds and the laptop's SSH port answers about 1.3 seconds later. Through the `ssh` hook, PowerShell's startup included, the hook returns with the laptop's SSH port up after about 9 seconds. It works with the lid closed too, and after the laptop fell asleep on its own idle timer. Windows didn't put it back to sleep after a couple of minutes either, which it can do when it thinks nobody is at the machine.
 
 The one catch: a board plugged in while the laptop already sleeps can't wake it, because the laptop never set it up. It works from the next wake on.
 
-## How far can I turn it down?
+### How far can I turn it down?
 
 The board sits on USB power all day, so I wondered how much of it I could switch off and still have it wake the laptop every time. Each step adds to the one before:
 
@@ -126,7 +126,7 @@ The board sits on USB power all day, so I wondered how much of it I could switch
 
 All of them work, so at first I kept all three. I didn't measure the power itself: the laptop is on its charger whenever the board is plugged in, so it didn't matter enough to buy a USB meter. That also means I can't tell whether the chip really reached light sleep, only that turning it on didn't break waking. The S3 can't wake from light sleep on USB activity, so I also checked that the board keeps up when the laptop wakes by its own power button. It did.
 
-## A restart found the step too far
+### A restart found the step too far
 
 A week later I opened the laptop and the board was dead: `unmounted`, and still `unmounted` after I logged in, until I unplugged it and plugged it back. The laptop's event log showed why it had a chance to break: Windows Update had woken it at 5 in the morning and restarted it three times in three minutes.
 
@@ -136,11 +136,11 @@ To run 40 sleep-wake cycles without me, the board also needed to put the laptop 
 
 I didn't write the firmware or run the tests by hand. I planned the work and the testing strategy; Claude Code wrote the firmware and ran the tests from my desktop; I did the plugging and flashing.
 
-# Setup
+## Setup
 
 Seeed XIAO ESP32-S3, ESP-IDF v6.1, `esp_tinyusb` 2.4.0. Lenovo Legion Pro 5 16ARX8, BIOS LPCN44WW, "Always On USB" on, Windows 11 Home (build 26200). Tested from 2026-11-07 to 2026-11-16.
 
-# Closing thoughts
+## Closing thoughts
 
 Ironically, this all started because I wanted to finally get magic packets working on my machine. Finding out my hardware simply doesn't support it was the low point; getting around it with a little gizmo of my own was the high one. And seeing how far I could push the power saving before it backfired was the fun part.
 
